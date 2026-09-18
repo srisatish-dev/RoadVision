@@ -1,142 +1,211 @@
 {% extends "base.html" %}
 
-{% block title %}RoadVision — Dashboard{% endblock %}
+{% block title %}RoadVision — AI Road Scene Intelligence Dashboard{% endblock %}
 
 {% block content %}
 
-<!--
-=======================================================================
-  RoadVision — Live Dashboard Layout (STUB)
-=======================================================================
-  This template will render two main panels:
-    LEFT  → Live annotated video feed
-    RIGHT → Road Scene Summary sidebar
-
-  All data is fetched from the Flask REST API by dashboard.js.
-  No CV logic lives in this template.
-=======================================================================
--->
-
-<div class="row g-3">
+<!-- Main Control Dashboard Layout -->
+<div class="row g-4">
 
     <!-- ==============================================================
-         LEFT PANEL — Video Feed + Controls
+         LEFT PANEL — Video Feed & Processing Controls
          ============================================================== -->
     <div class="col-lg-8">
 
-        <!-- Video Upload & Control Bar -->
-        <div class="card card-dark mb-3">
-            <div class="card-body d-flex align-items-center gap-3 flex-wrap">
-                <label class="btn btn-outline-light btn-sm mb-0">
-                    📂 Load Video
-                    <input type="file" id="video-upload" accept="video/*" hidden />
-                </label>
-                <button class="btn btn-success btn-sm" id="btn-start" disabled>▶ Start</button>
-                <button class="btn btn-danger btn-sm" id="btn-stop" disabled>⏹ Stop</button>
-                <span class="text-muted small ms-auto" id="frame-counter">Frame: —</span>
+        <!-- Toolbar Card -->
+        <div class="card card-glass mb-3">
+            <div class="card-body p-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
+
+                <!-- Segmented Control Mode Tabs -->
+                <div class="segmented-control p-1 rounded-3 bg-dark-subtle border border-secondary-subtle d-inline-flex">
+                    <input type="radio" class="btn-check" name="mode-radio" id="mode-file" checked autocomplete="off">
+                    <label class="btn btn-sm btn-mode rounded-2 px-3 fw-semibold" for="mode-file">
+                        <i class="bi bi-file-earmark-play-fill me-1"></i> File Mode
+                    </label>
+
+                    <input type="radio" class="btn-check" name="mode-radio" id="mode-webcam" autocomplete="off">
+                    <label class="btn btn-sm btn-mode rounded-2 px-3 fw-semibold" for="mode-webcam">
+                        <i class="bi bi-camera-video-fill me-1"></i> Live Camera
+                    </label>
+                </div>
+
+                <!-- Video File Mode Action Controls -->
+                <div id="file-controls" class="d-flex align-items-center gap-2 flex-wrap">
+                    <label class="btn btn-outline-amber btn-sm mb-0 rounded-3 px-3 cursor-pointer">
+                        <i class="bi bi-cloud-upload-fill me-1"></i> Select Video
+                        <input type="file" id="video-upload" accept="video/*" hidden />
+                    </label>
+                    <span class="badge bg-dark border border-secondary text-truncate max-w-160 text-light py-2 px-2" id="selected-file-name">No file loaded</span>
+
+                    <button class="btn btn-gradient-amber btn-sm px-3 rounded-3 fw-bold" id="btn-start" disabled>
+                        <i class="bi bi-play-fill me-1"></i> Process Video
+                    </button>
+                    <a class="btn btn-outline-info btn-sm px-3 rounded-3 d-none" id="btn-download" download>
+                        <i class="bi bi-download me-1"></i> Download
+                    </a>
+                </div>
+
+                <!-- Live Camera Mode Action Controls -->
+                <div id="webcam-controls" class="d-none d-flex align-items-center gap-2">
+                    <button class="btn btn-danger btn-sm px-3 rounded-3 fw-bold" id="btn-webcam-start">
+                        <i class="bi bi-record-circle-fill me-1"></i> Start Live Camera
+                    </button>
+                    <button class="btn btn-secondary btn-sm px-3 rounded-3" id="btn-webcam-stop" disabled>
+                        <i class="bi bi-stop-fill me-1"></i> Stop Camera
+                    </button>
+                </div>
+
+                <div class="ms-auto text-muted small" id="process-status">
+                    <i class="bi bi-info-circle me-1"></i> Status: Ready
+                </div>
             </div>
         </div>
 
-        <!-- Annotated Video Frame -->
-        <div class="card card-dark video-card">
-            <div class="card-body p-1 text-center">
-                <img
-                    id="video-frame"
-                    class="video-feed"
-                    src="{{ url_for('static', filename='img/placeholder.png') }}"
-                    alt="Video Feed"
-                />
+        <!-- Video Display Screen Box (Guaranteed 480px Height) -->
+        <div class="card card-glass video-screen-box p-3 text-center position-relative overflow-hidden" style="min-height: 480px; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #050810;">
+
+            <!-- Video Overlay Badges -->
+            <div id="video-overlay-badges" class="position-absolute top-0 start-0 w-100 p-3 d-flex justify-content-between align-items-center d-none" style="z-index: 5;">
+                <span class="badge bg-dark-80 border border-secondary text-amber font-monospace px-3 py-2 shadow-sm">
+                    <i class="bi bi-cpu-fill me-1"></i> YOLOv8 + Tracker
+                </span>
+                <span class="badge bg-dark-80 border border-success text-success font-monospace px-3 py-2 shadow-sm">
+                    <i class="bi bi-activity me-1"></i> REAL-TIME INFERENCE
+                </span>
+            </div>
+
+            <!-- Loading Spinner Centerpiece -->
+            <div id="loading-overlay" class="d-none flex-column align-items-center justify-content-center py-5 my-auto w-100">
+                <div class="spinner-grow text-warning mb-3" role="status" style="width: 4rem; height: 4rem;"></div>
+                <h4 class="text-white fw-bold mb-2">AI Detection Pipeline Running</h4>
+                <p class="text-muted small mb-0">Performing YOLO inference & Object ID Tracking on backend...</p>
+                <div class="mt-3">
+                    <span class="badge bg-amber-subtle text-amber px-3 py-2 font-monospace">
+                        <i class="bi bi-gear-wide-connected me-1"></i> PROCESSING VIDEO FRAMES
+                    </span>
+                </div>
+            </div>
+
+            <!-- MJPEG Live Video Stream -->
+            <img
+                id="video-stream"
+                class="w-100 rounded-3 shadow-lg d-none my-auto"
+                alt="Processed AI Video Feed"
+                style="max-height: 500px; object-fit: contain;"
+            />
+
+            <!-- Empty State Placeholder -->
+            <div id="video-placeholder" class="d-flex flex-column justify-content-center align-items-center py-5 my-auto">
+                <div class="placeholder-icon-circle mb-3">
+                    <i class="bi bi-camera-reels text-amber fs-1 opacity-75"></i>
+                </div>
+                <h5 class="text-light fw-bold mb-1" id="placeholder-title">No Video Stream Active</h5>
+                <p class="text-muted small max-w-350" id="placeholder-subtitle">
+                    Select a driving footage file above or activate Live Camera mode to begin real-time scene analysis.
+                </p>
             </div>
         </div>
 
     </div>
 
     <!-- ==============================================================
-         RIGHT PANEL — Road Scene Summary Sidebar
+         RIGHT PANEL — AI Road Intelligence Sidebar
          ============================================================== -->
     <div class="col-lg-4">
 
-        <!-- Object Counts -->
-        <div class="card card-dark mb-3">
-            <div class="card-header sidebar-header">📊 Road Scene Summary</div>
-            <div class="card-body">
-                <table class="table table-sm table-dark table-borderless mb-0">
-                    <tbody>
-                        <tr>
-                            <td class="text-muted">Total Objects</td>
-                            <td class="text-end fw-bold" id="stat-total">—</td>
-                        </tr>
-                        <tr>
-                            <td>🚗 Vehicles</td>
-                            <td class="text-end" id="stat-vehicles">—</td>
-                        </tr>
-                        <tr>
-                            <td>🚶 Road Users</td>
-                            <td class="text-end" id="stat-road-users">—</td>
-                        </tr>
-                        <tr>
-                            <td>🚦 Infrastructure</td>
-                            <td class="text-end" id="stat-infrastructure">—</td>
-                        </tr>
-                        <tr>
-                            <td>⚠️ Road Hazards</td>
-                            <td class="text-end" id="stat-hazards">—</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <!-- Primary Unique Tracking Summary Card -->
+        <div class="card card-glass mb-3 border-amber-subtle">
+            <div class="card-header card-header-glass d-flex align-items-center justify-content-between py-3">
+                <span class="fw-bold text-light">
+                    <i class="bi bi-crosshair2 text-amber me-2"></i>Unique Objects Tracked
+                </span>
+                <span class="badge bg-amber-subtle text-amber font-monospace">OBJECT ID TRACKING</span>
+            </div>
+            <div class="card-body p-3">
+                <!-- Large Counter Box -->
+                <div class="main-metric-banner text-center py-3 px-2 rounded-3 mb-3">
+                    <div class="text-muted x-small font-monospace text-uppercase tracking-wider">Total Unique Physical Objects</div>
+                    <div class="display-5 fw-extrabold text-amber my-1" id="stat-total-unique">0</div>
+                    <div class="text-muted x-small" id="stat-total-raw-desc">Persistent Track IDs assigned across video</div>
+                </div>
+
+                <!-- 4 Category Stat Cards Grid -->
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="category-card p-2 rounded-3">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="small fw-semibold text-amber"><i class="bi bi-car-front-fill me-1"></i> Vehicles</span>
+                            </div>
+                            <div class="fs-4 fw-bold text-white" id="stat-vehicles">0</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="category-card p-2 rounded-3">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="small fw-semibold text-emerald"><i class="bi bi-person-walking me-1"></i> Road Users</span>
+                            </div>
+                            <div class="fs-4 fw-bold text-white" id="stat-road-users">0</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="category-card p-2 rounded-3">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="small fw-semibold text-cyan"><i class="bi bi-traffic-light-fill me-1"></i> Infra</span>
+                            </div>
+                            <div class="fs-4 fw-bold text-white" id="stat-infrastructure">0</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="category-card p-2 rounded-3">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="small fw-semibold text-rose"><i class="bi bi-exclamation-triangle-fill me-1"></i> Hazards</span>
+                            </div>
+                            <div class="fs-4 fw-bold text-white" id="stat-hazards">0</div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
-        <!-- Density -->
-        <div class="card card-dark mb-3">
-            <div class="card-header sidebar-header">🔢 Scene Density</div>
-            <div class="card-body text-center">
-                <span class="badge density-badge" id="density-badge">—</span>
+        <!-- Performance Stats Card -->
+        <div class="card card-glass mb-3">
+            <div class="card-header card-header-glass py-2">
+                <span class="fw-bold text-light small"><i class="bi bi-lightning-charge-fill text-amber me-2"></i>Performance & Frame Speed</span>
+            </div>
+            <div class="card-body p-3">
+                <div class="row text-center g-2">
+                    <div class="col-4">
+                        <div class="perf-metric-box p-2 rounded-2">
+                            <div class="text-muted x-small">Frames</div>
+                            <div class="fw-bold text-white" id="stat-frames">0</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="perf-metric-box p-2 rounded-2">
+                            <div class="text-muted x-small">Speed</div>
+                            <div class="fw-bold text-emerald" id="stat-fps">0 FPS</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="perf-metric-box p-2 rounded-2">
+                            <div class="text-muted x-small">Duration</div>
+                            <div class="fw-bold text-white" id="stat-time">0s</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Motion -->
-        <div class="card card-dark mb-3">
-            <div class="card-header sidebar-header">🏃 Motion Status</div>
-            <div class="card-body">
-                <table class="table table-sm table-dark table-borderless mb-0">
-                    <tbody>
-                        <tr>
-                            <td>Moving</td>
-                            <td class="text-end text-success fw-bold" id="stat-moving">—</td>
-                        </tr>
-                        <tr>
-                            <td>Stationary</td>
-                            <td class="text-end text-warning fw-bold" id="stat-stationary">—</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <!-- Chart.js Breakdown Card -->
+        <div class="card card-glass">
+            <div class="card-header card-header-glass py-2">
+                <span class="fw-bold text-light small"><i class="bi bi-bar-chart-line-fill text-amber me-2"></i>Unique Count Per Class</span>
             </div>
-        </div>
-
-        <!-- Danger Zone -->
-        <div class="card card-dark mb-3">
-            <div class="card-header sidebar-header">🚨 Danger Zone</div>
-            <div class="card-body text-center">
-                <span class="badge danger-badge" id="danger-badge">—</span>
-            </div>
-        </div>
-
-        <!-- Alerts -->
-        <div class="card card-dark mb-3">
-            <div class="card-header sidebar-header">⚠️ Alerts</div>
-            <div class="card-body">
-                <ul class="list-unstyled mb-0" id="alerts-list">
-                    <li class="text-muted small">No alerts</li>
-                </ul>
-            </div>
-        </div>
-
-        <!-- Object List (optional chart placeholder) -->
-        <div class="card card-dark">
-            <div class="card-header sidebar-header">📋 Object Breakdown</div>
-            <div class="card-body">
-                <canvas id="object-chart" height="160"></canvas>
+            <div class="card-body p-3">
+                <div style="height: 180px; position: relative;">
+                    <canvas id="object-chart"></canvas>
+                </div>
             </div>
         </div>
 
@@ -144,9 +213,3 @@
 </div>
 
 {% endblock %}
-
-<!--
-NOTE: This is a STUB template.
-Full implementation of dashboard interactivity and data binding
-is handled by static/js/dashboard.js and begins in Phase 2.
--->

@@ -8,90 +8,171 @@
 
 ## Overview
 
-RoadVision is a computer-vision system built for the **VisionX Hackathon** that processes
-driving footage and goes beyond basic object detection by adding spatial, temporal, and
-contextual analysis on top of a YOLO-based detector.
+RoadVision is a computer-vision system built for the **VisionX Hackathon** that processes driving footage using YOLO object detection and lightweight spatial, temporal, and contextual scene-analysis techniques.
 
-The system detects vehicles, pedestrians, road infrastructure, and road hazards — then
-applies lightweight rule-based analysis to provide:
-
-- **Object tracking** with temporary IDs
-- **Object counting & categorization** (Vehicles / Road Users / Infrastructure / Road Hazards)
-- **Road-zone awareness** (LEFT | CENTER | RIGHT × FAR | NEAR)
-- **Moving vs. stationary classification**
-- **Road-scene density** (LOW / MEDIUM / HIGH)
-- **Danger-zone analysis** (predefined near-center region)
-- **Contextual road alerts** (rule-based cautions)
-- **Overall scene summary**
-- **Live dashboard** (annotated video + sidebar)
+Phase 2A delivers the **YOLO Road-Scene Video Detection Prototype**, a clean and modular video-processing pipeline that processes input road videos through a pretrained YOLO model, visualizes object detections (bounding boxes, class labels, confidence scores), and exports the processed output video.
 
 ---
 
-## Core Pipeline
+## Architecture
+
+The core video detection pipeline is designed to be fully modular and decoupled from the CLI and web interface:
 
 ```
-Driving Video
-    ↓
-Frame Processing
-    ↓
-YOLO Object Detection
-    ↓
-Object Tracking
-    ↓
-Count + Categorize
-    ↓
-Road-Zone Analysis
-    ↓
-Moving / Stationary Classification
-    ↓
-Scene Density Estimation
-    ↓
-Danger-Zone Analysis
-    ↓
-Contextual Alerts
-    ↓
-Overall Scene Summary
-    ↓
-Live Dashboard
+[ Input Video ]
+       │
+       ▼
+┌─────────────────────────────────────────┐
+│            VideoProcessor               │
+│  • Validates input format & specs       │
+│  • Manages OpenCV VideoCapture & Writer │
+└────────────────────┬────────────────────┘
+                     │  Per-frame (numpy BGR image)
+                     ▼
+┌─────────────────────────────────────────┐
+│             YOLODetector                │
+│  • Loads YOLO model (once)              │
+│  • Performs inference on device         │
+│  • Returns structured Detection objects │
+└────────────────────┬────────────────────┘
+                     │  List of Detection objects
+                     ▼
+┌─────────────────────────────────────────┐
+│         Visualization & Output          │
+│  • Renders bounding boxes & labels      │
+│  • Writes frame to output video file    │
+│  • Accumulates detection statistics     │
+└────────────────────┬────────────────────┘
+                     │
+                     ▼
+[ Processed Output Video + Statistics Summary ]
 ```
 
 ---
 
-## Detected Object Classes
+## Setup
 
-### Vehicles
-`car` · `bus` · `truck` · `motorcycle` · `bicycle` · `auto-rickshaw`
+### 1. Prerequisites
+- Python 3.10+ (tested on Python 3.13)
+- PyTorch (CPU or CUDA GPU)
 
-### Road Users
-`person`
+### 2. Install Dependencies
+Install all required packages from `requirements.txt`:
 
-### Infrastructure
-`traffic light` · `stop sign` · `road barrier`
+```bash
+pip install -r requirements.txt
+```
 
-### Road Hazards
-`pothole` · `construction/road debris`
-
-> **Note**: Standard classes (car, bus, truck, motorcycle, bicycle, person, traffic light,
-> stop sign) may be available from a COCO-compatible YOLO model. Custom road-specific
-> classes (auto-rickshaw, pothole, road barrier, construction debris) require custom
-> training data and a dedicated training run.
+This installs:
+- `ultralytics` (YOLO framework)
+- `opencv-python` (video processing & rendering)
+- `Flask` & `Flask-CORS` (local web application)
+- `PyYAML` (configuration management)
 
 ---
 
-## Application Type
+## Running the Prototype
 
-**Local Web Application** — runs entirely on your machine, accessed in the browser at `http://localhost:5000`.
-No cloud inference. No external APIs. All CV processing stays in the Python backend.
+### Option A — Command Line Interface (CLI)
+
+Run the video detection prototype on a sample video:
+
+```bash
+# Basic run with default video
+python src/main.py --input input/road_video.mp4
+
+# Run via root pipeline script
+python pipeline.py --video input/road_video.mp4
+
+# Specify custom model, confidence threshold, and device
+python src/main.py --input input/road_video.mp4 --model yolov8s.pt --confidence 0.30 --device cuda
+```
+
+### Option B — Web Interface Prototype
+
+Launch the local web server:
+
+```bash
+python run.py
+```
+
+Then open your browser at `http://localhost:5000` to upload a video, start processing, and download the output.
+
+---
+
+## Output
+
+Processed videos are saved automatically to the `output/` directory:
 
 ```
-Browser (Dashboard UI)
-    ↓  REST API
-Flask Backend (Python)
-    ↓  Python calls
-CV Pipeline (src/)   ← YOLO + Tracking + Scene Analysis
-    ↓
-Flask → Browser Dashboard
+output/
+└── road_video_detected.mp4
 ```
+
+### Example Summary Output (CLI)
+
+At the end of processing, a summary report is printed to the terminal:
+
+```
+============================================================
+ RoadVision — Phase 2A Video Processing Summary
+============================================================
+Status:             SUCCESS
+Input Video:        input/road_video.mp4
+Output Video:       output/road_video_detected.mp4
+Frames Processed:   300
+Processing Time:    12.4s
+Average FPS:        24.2 FPS
+------------------------------------------------------------
+Detections Summary (across all frames):
+  • Car            : 240
+  • Person         : 85
+  • Motorcycle     : 42
+  • Bus            : 12
+Total Detections:   379
+============================================================
+```
+
+---
+
+## Configuration
+
+All configurable parameters are centralized in `config/config.yaml`.
+
+```yaml
+# Model Configuration
+model:
+  weights_path: "yolov8n.pt"      # Model file or pretrained name (yolov8n.pt, yolov8s.pt, etc.)
+  confidence_threshold: 0.25     # Detection confidence threshold (0.0 - 1.0)
+  nms_iou_threshold: 0.45        # NMS IoU threshold
+  device: "auto"                 # "cpu", "cuda", or "auto"
+
+# Video Input & Output Configuration
+video:
+  default_input: "input/sample.mp4"
+  input_dir: "input"
+  output_dir: "output"
+  frame_skip: 1                  # 1 = process every frame, 2 = process every 2nd frame
+  max_width: 1280                # Max width for frame processing (None to keep original)
+```
+
+### Changing the Model
+To change the YOLO model variant or use a custom fine-tuned weights file (e.g. after Colab training):
+1. Update `config/config.yaml` → `model.weights_path: "models/roadvision_best.pt"`
+2. Or pass via CLI: `python src/main.py --model models/roadvision_best.pt`
+
+### Changing Confidence Threshold
+- Edit `config/config.yaml` → `model.confidence_threshold: 0.30`
+- Or pass via CLI: `python src/main.py --confidence 0.30`
+
+---
+
+## Current Detected Classes
+
+Initially relies on pretrained COCO classes for road scenes:
+- `car`, `bus`, `truck`, `motorcycle`, `bicycle`, `person`, `traffic light`, `stop sign`
+
+> **Note**: Fine-tuning for custom classes (`pothole`, `road barrier`, `auto-rickshaw`, `road debris`) will be performed in Phase 2B on Google Colab without requiring changes to the core `VideoProcessor` pipeline.
 
 ---
 
@@ -99,101 +180,28 @@ Flask → Browser Dashboard
 
 ```
 RoadVision/
-├── app/                    # Flask web application
-│   ├── routes/
-│   │   ├── main.py         # Page routes  (GET /)
-│   │   └── api.py          # REST API     (/api/*)
-│   ├── static/
-│   │   ├── css/dashboard.css
-│   │   └── js/dashboard.js
-│   └── templates/
-│       ├── base.html
-│       └── dashboard.html
-├── src/                    # Python CV pipeline modules
-│   ├── detector.py         # M2 — YOLO detector wrapper
-│   ├── tracker.py          # M3 — Object tracker
-│   ├── categorizer.py      # M4 — Counter + categorizer
-│   ├── zone_analyzer.py    # M5 — Zone analysis
-│   ├── motion_classifier.py# M6 — Moving/stationary
-│   ├── density_estimator.py# M7 — Scene density
-│   ├── danger_zone.py      # M8 — Danger-zone analysis
-│   ├── alert_generator.py  # M9 — Contextual alerts
-│   ├── scene_summary.py    # M10 — Scene summary
-│   └── utils.py            # Shared utilities
-├── training/               # Google Colab training workflow
-│   ├── notebooks/          # Colab training notebooks
-│   └── scripts/            # Dataset preparation scripts
-├── data/                   # Datasets + uploaded videos (git-ignored)
-├── models/                 # Trained YOLO weights (git-ignored)
-├── config/config.yaml      # All configurable parameters
-├── docs/                   # Documentation
-├── tests/                  # Unit + integration tests
-├── run.py                  # Flask application entry point
-├── requirements.txt        # Python dependencies
-└── README.md
+├── config/
+│   └── config.yaml              # Central configuration file
+├── src/
+│   ├── detector.py              # YOLODetector abstraction module
+│   ├── video_processor.py       # VideoProcessor engine & renderer
+│   └── main.py                  # CLI entry point & summary reporter
+├── app/                         # Flask web application layer
+│   ├── routes/                  # REST API & page routes
+│   ├── static/                  # CSS & JS frontend assets
+│   └── templates/               # HTML templates
+├── input/                       # Input videos directory
+├── output/                      # Processed output videos directory
+├── models/                      # Fine-tuned model weights directory
+├── scripts/
+│   └── generate_sample_video.py # Synthetic test video generator
+├── pipeline.py                  # Root CLI wrapper
+├── run.py                       # Root web server launcher
+├── requirements.txt             # Python dependencies
+└── README.md                    # Project documentation
 ```
-
----
-
-## Training vs. Application Split
-
-| Concern | Location | Runs On |
-|---------|----------|---------|
-| Dataset prep | `training/scripts/` | Local / Colab |
-| YOLO training | `training/notebooks/` | **Google Colab** |
-| Model evaluation | `training/notebooks/` | **Google Colab** |
-| Trained weights | `models/` | Exported from Colab |
-| CV pipeline | `src/` | **Local machine** |
-| Flask backend | `app/` | **Local machine** |
-| Web dashboard | `app/templates/` + `app/static/` | **Browser** |
-
----
-
-## Quick Start (After Model is Available)
-
-```bash
-# 1. Install dependencies
-pip install -r requirements.txt
-
-# 2. Place trained model in models/
-#    e.g., models/roadvision_best.pt
-
-# 3. Start the web server
-python run.py
-
-# 4. Open in browser
-#    http://localhost:5000
-
-# 5. Upload driving video → click ▶ Start
-```
-
-
----
-
-## Scope Boundaries
-
-### ✅ Current Scope
-Object detection · Object tracking · Counting · Categorization ·
-Zone analysis · Motion classification · Density estimation ·
-Danger-zone analysis · Contextual alerts · Scene summary · Live dashboard
-
-### 🔮 Future Scope Only
-Time-to-Conflict (TTC) · Pedestrian trajectory prediction ·
-True depth/distance estimation · 3D scene understanding ·
-Collision prediction · Autonomous vehicle control
-
-### ❌ Explicitly Out of Scope
-Accident prediction · Confirmed traffic-law violation detection ·
-Exact distance measurement · Advanced dynamic risk prediction
 
 ---
 
 ## Hackathon
 **VisionX** — One-Day Computer Vision Hackathon
-
----
-
-## Acknowledgements
-
-- Datasets, external libraries, and any pretrained components will be documented here
-  once dataset and training strategy decisions are finalized.

@@ -35,26 +35,30 @@ server:
 # MODEL
 # ---------------------------------------------------------------------------
 model:
-  # Path to the trained YOLO model weights (relative to project root).
-  # Populate this after exporting the trained model from Colab.
-  weights_path: "models/roadvision_best.pt"
+  # Path to the YOLO model weights or model name (e.g., yolov8n.pt, yolov8s.pt, models/roadvision_best.pt).
+  # For Phase 2A prototype, default to lightweight pretrained 'yolov8n.pt'.
+  weights_path: "yolov8n.pt"
 
   # Confidence threshold: detections below this score are discarded.
-  confidence_threshold: 0.40
+  confidence_threshold: 0.25
 
   # IoU threshold for Non-Maximum Suppression (NMS).
-  nms_iou_threshold: 0.50
+  nms_iou_threshold: 0.45
 
-  # Device for inference: "cpu" or "cuda" (if GPU is available locally).
-  device: "cpu"
+  # Device for inference: "cpu", "cuda", or "auto" (auto-detects CUDA).
+  device: "auto"
 
 
 # ---------------------------------------------------------------------------
-# VIDEO INPUT
+# VIDEO INPUT & OUTPUT
 # ---------------------------------------------------------------------------
 video:
-  # Default input video path (override via CLI --video flag).
-  default_input: "data/sample_footage/sample.mp4"
+  # Default input video path (override via CLI --input flag).
+  default_input: "input/sample.mp4"
+
+  # Default input and output directories
+  input_dir: "input"
+  output_dir: "output"
 
   # Process every Nth frame to trade accuracy for speed.
   # 1 = every frame, 2 = every other frame, etc.

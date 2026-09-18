@@ -1,13 +1,15 @@
 """
-RoadVision — Main Routes (Page Routes)
-=======================================
-Serves the HTML dashboard page and handles file upload interactions.
-
-Planned Routes:
-    GET  /              → Serve dashboard HTML page
-    POST /upload        → Accept uploaded driving video file
-
-NOTE: This file is a STUB. Full implementation begins in Phase 2.
+RoadVision — Main Page Routes
+=============================
+Renders the HTML web interface.
 """
 
-# routes/main.py — Placeholder
+from flask import Blueprint, render_template
+
+main_bp = Blueprint("main", __name__)
+
+
+@main_bp.route("/", methods=["GET"])
+def index():
+    """Render main dashboard page."""
+    return render_template("dashboard.html")

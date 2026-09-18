@@ -1,40 +1,49 @@
 """
-RoadVision — Flask Application Entry Point
-==========================================
+RoadVision — Flask Web Server Entry Point
+=========================================
 Run the local web application:
 
     python run.py
 
-Then open:  http://localhost:5000
-
-Architecture:
-    Browser
-        ↓
-    HTML/CSS/JS Dashboard  (app/templates/ + app/static/)
-        ↓
-    Flask Backend          (app/routes/)
-        ↓
-    Python CV Pipeline     (src/)
-        ↓
-    YOLO Detection → Tracking → Scene Analysis → Alerts → Summary
-        ↓
-    Flask Backend          (app/routes/api.py)
-        ↓
-    Browser Dashboard
-
-NOTE: This file is a STUB. Full implementation begins in Phase 2.
-The Flask app, routes, and CV pipeline integration are not yet implemented.
+Then open in your browser:
+    http://localhost:5000
 """
 
-# run.py — Placeholder
-# Full implementation will be added in Phase 2.
+import os
+import sys
+import yaml
 
-raise NotImplementedError(
-    "\n\n"
-    "  run.py is not yet implemented.\n"
-    "  This stub will be filled during Phase 2 (Web Application Phase).\n"
-    "  Awaiting:\n"
-    "    1. Pretrained-weight ruling confirmation\n"
-    "    2. Dataset strategy confirmation\n"
-    "    3. Phase 1 (Model Training) completion\n"
-)
+# Ensure project root is in sys.path
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+from app import create_app
+
+
+def main():
+    app = create_app("config/config.yaml")
+
+    # Load host/port from config
+    host = "0.0.0.0"
+    port = 5000
+    debug = True
+
+    if os.path.exists("config/config.yaml"):
+        with open("config/config.yaml", "r", encoding="utf-8") as f:
+            cfg = yaml.safe_load(f) or {}
+            server_cfg = cfg.get("server", {})
+            host = server_cfg.get("host", host)
+            port = server_cfg.get("port", port)
+            debug = server_cfg.get("debug", debug)
+
+    print("\n" + "=" * 60)
+    print(" 🚗 Starting RoadVision Web Application")
+    print(f" Access URL: http://localhost:{port}")
+    print("=" * 60 + "\n")
+
+    app.run(host=host, port=port, debug=debug)
+
+
+if __name__ == "__main__":
+    main()

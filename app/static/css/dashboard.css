@@ -1,161 +1,253 @@
 /* =============================================================================
-   RoadVision — Dashboard Stylesheet
-   VisionX Hackathon
-   =============================================================================
-   NOTE: This is a STUB stylesheet.
-   Full styling implementation begins in Phase 2 (Web Application Phase).
+   RoadVision — Ultra-Modern Web Application Theme
+   Inspired by Tesla Vision / Vercel Dark Glassmorphism Architecture
    ============================================================================= */
 
-/* ---------------------------------------------------------------------------
-   CSS Variables — Color Palette
-   --------------------------------------------------------------------------- */
 :root {
-    --rv-bg-dark:       #0d1117;
-    --rv-bg-card:       #161b22;
-    --rv-bg-card-alt:   #1c2230;
-    --rv-border:        #30363d;
-    --rv-accent:        #f0a500;       /* amber — primary accent */
-    --rv-green:         #3fb950;
-    --rv-red:           #f85149;
-    --rv-yellow:        #d29922;
-    --rv-blue:          #388bfd;
-    --rv-text:          #c9d1d9;
-    --rv-text-muted:    #8b949e;
-    --rv-navbar-height: 56px;
+    --rv-font-heading: 'Plus Jakarta Sans', -apple-system, sans-serif;
+    --rv-font-body:    'Inter', -apple-system, sans-serif;
+
+    /* Background Color Hierarchy */
+    --rv-bg-dark:       #080c14;
+    --rv-bg-glass:      rgba(15, 22, 36, 0.75);
+    --rv-bg-card-alt:   rgba(24, 34, 56, 0.6);
+    --rv-border:        rgba(255, 255, 255, 0.09);
+    --rv-border-amber:  rgba(255, 183, 3, 0.3);
+
+    /* Vibrant Color Accents */
+    --rv-amber:         #ffb703;       /* glowing amber */
+    --rv-amber-glow:    rgba(255, 183, 3, 0.25);
+    --rv-emerald:       #2ec4b6;       /* electric emerald */
+    --rv-cyan:          #3a86ff;       /* deep cyan */
+    --rv-rose:          #ff0054;       /* neon crimson */
+
+    /* Typography Contrast Levels */
+    --rv-text-white:    #ffffff;
+    --rv-text-main:     #f1f5f9;
+    --rv-text-muted:    #94a3b8;
+    --rv-text-dark:     #0f172a;
 }
 
 /* ---------------------------------------------------------------------------
-   Global / Reset
+   Global Styles & Background Gradients
    --------------------------------------------------------------------------- */
-body {
-    background-color: var(--rv-bg-dark);
-    color: var(--rv-text);
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+body.bg-gradient-dark {
+    background: radial-gradient(circle at 50% 0%, #111a2e 0%, #080c14 70%);
+    background-attachment: fixed;
+    color: var(--rv-text-main);
+    font-family: var(--rv-font-body);
     min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6, .brand-title {
+    font-family: var(--rv-font-heading);
+}
+
+/* Helper Utilities */
+.text-amber   { color: var(--rv-amber) !important; }
+.text-emerald { color: var(--rv-emerald) !important; }
+.text-cyan    { color: var(--rv-cyan) !important; }
+.text-rose    { color: var(--rv-rose) !important; }
+
+.fw-extrabold { font-weight: 800 !important; }
+.x-small     { font-size: 0.72rem; }
+.max-w-160   { max-width: 160px; }
+.max-w-350   { max-width: 350px; }
+.cursor-pointer { cursor: pointer; }
+
+.bg-dark-80 { background-color: rgba(8, 12, 20, 0.85) !important; backdrop-filter: blur(8px); }
+
+/* ---------------------------------------------------------------------------
+   Navbar Styles
+   --------------------------------------------------------------------------- */
+.navbar-glass {
+    background: rgba(11, 16, 26, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--rv-border);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+}
+
+.brand-icon-box {
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 183, 3, 0.12);
+    border: 1px solid var(--rv-border-amber);
+    border-radius: 10px;
     display: flex;
-    flex-direction: column;
-}
-
-/* ---------------------------------------------------------------------------
-   Navbar
-   --------------------------------------------------------------------------- */
-.navbar-roadvision {
-    background-color: var(--rv-bg-card);
-    border-bottom: 1px solid var(--rv-border);
-    height: var(--rv-navbar-height);
-}
-
-.navbar-roadvision .navbar-brand {
-    color: var(--rv-accent);
-    font-weight: 700;
-    letter-spacing: 0.05em;
-}
-
-/* ---------------------------------------------------------------------------
-   Cards
-   --------------------------------------------------------------------------- */
-.card-dark {
-    background-color: var(--rv-bg-card);
-    border: 1px solid var(--rv-border);
-    border-radius: 8px;
-}
-
-.sidebar-header {
-    background-color: var(--rv-bg-card-alt);
-    border-bottom: 1px solid var(--rv-border);
-    color: var(--rv-text);
-    font-size: 0.80rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    padding: 0.5rem 0.75rem;
-}
-
-/* ---------------------------------------------------------------------------
-   Video Feed
-   --------------------------------------------------------------------------- */
-.video-card {
-    min-height: 400px;
-}
-
-.video-feed {
-    width: 100%;
-    height: auto;
-    border-radius: 6px;
-    object-fit: contain;
-    background-color: #000;
-}
-
-/* ---------------------------------------------------------------------------
-   Density Badge
-   --------------------------------------------------------------------------- */
-.density-badge {
+    align-items: center;
+    justify-content: center;
     font-size: 1.1rem;
-    padding: 0.5em 1.2em;
 }
 
-.density-LOW    { background-color: var(--rv-green);  color: #000; }
-.density-MEDIUM { background-color: var(--rv-yellow); color: #000; }
-.density-HIGH   { background-color: var(--rv-red);    color: #fff; }
+.brand-title {
+    font-weight: 800;
+    font-size: 1.25rem;
+    color: var(--rv-text-white);
+    letter-spacing: -0.02em;
+}
+
+.brand-subtitle {
+    font-size: 0.8rem;
+    color: var(--rv-text-muted);
+    margin-left: 0.5rem;
+    padding-left: 0.5rem;
+    border-left: 1px solid var(--rv-border);
+}
+
+/* Status Pill & Pulse Indicator */
+.status-pill {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--rv-border);
+    font-size: 0.75rem;
+    color: var(--rv-text-main);
+}
+
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--rv-emerald);
+    box-shadow: 0 0 10px var(--rv-emerald);
+    animation: pulseGlow 1.8s infinite;
+}
+
+@keyframes pulseGlow {
+    0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(46, 196, 182, 0.7); }
+    70%  { transform: scale(1.1);  box-shadow: 0 0 0 8px rgba(46, 196, 182, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(46, 196, 182, 0); }
+}
 
 /* ---------------------------------------------------------------------------
-   Danger Zone Badge
+   Card Glassmorphism Architecture
    --------------------------------------------------------------------------- */
-.danger-badge {
-    font-size: 1.0rem;
-    padding: 0.5em 1.2em;
+.card-glass {
+    background: var(--rv-bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--rv-border);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.danger-ACTIVE { background-color: var(--rv-red);   color: #fff; animation: pulse 1s infinite; }
-.danger-CLEAR  { background-color: var(--rv-green); color: #000; }
-
-@keyframes pulse {
-    0%   { opacity: 1; }
-    50%  { opacity: 0.6; }
-    100% { opacity: 1; }
+.card-glass:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
 }
 
-/* ---------------------------------------------------------------------------
-   Alerts List
-   --------------------------------------------------------------------------- */
-#alerts-list li {
-    font-size: 0.82rem;
-    padding: 0.25rem 0;
+.border-amber-subtle {
+    border-color: var(--rv-border-amber) !important;
+}
+
+.card-header-glass {
+    background: rgba(255, 255, 255, 0.02);
     border-bottom: 1px solid var(--rv-border);
-    color: var(--rv-yellow);
+    border-top-left-radius: 15px !important;
+    border-top-right-radius: 15px !important;
 }
 
-#alerts-list li:last-child { border-bottom: none; }
+/* ---------------------------------------------------------------------------
+   Segmented Control Tabs
+   --------------------------------------------------------------------------- */
+.btn-mode {
+    color: var(--rv-text-muted);
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.btn-check:checked + .btn-mode {
+    background: var(--rv-amber);
+    color: var(--rv-text-dark);
+    font-weight: 700;
+    box-shadow: 0 4px 12px var(--rv-amber-glow);
+}
 
 /* ---------------------------------------------------------------------------
-   Table
+   Buttons & Action Controls
    --------------------------------------------------------------------------- */
-.table-dark {
-    --bs-table-bg: transparent;
-    color: var(--rv-text);
-    font-size: 0.85rem;
+.btn-gradient-amber {
+    background: linear-gradient(135deg, #ffb703 0%, #fb8500 100%);
+    border: none;
+    color: #000;
+    box-shadow: 0 4px 15px rgba(255, 183, 3, 0.3);
+    transition: all 0.2s ease;
+}
+
+.btn-gradient-amber:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(255, 183, 3, 0.45);
+    color: #000;
+}
+
+.btn-outline-amber {
+    border-color: var(--rv-border-amber);
+    color: var(--rv-amber);
+}
+
+.btn-outline-amber:hover {
+    background: rgba(255, 183, 3, 0.15);
+    color: var(--rv-amber);
+    border-color: var(--rv-amber);
+}
+
+/* ---------------------------------------------------------------------------
+   Video Display Box & Placeholders
+   --------------------------------------------------------------------------- */
+.video-screen-box {
+    border: 1px solid var(--rv-border-amber);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+}
+
+.placeholder-icon-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(255, 183, 3, 0.08);
+    border: 1px solid var(--rv-border-amber);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ---------------------------------------------------------------------------
+   Metric Cards & Badges
+   --------------------------------------------------------------------------- */
+.main-metric-banner {
+    background: linear-gradient(180deg, rgba(255, 183, 3, 0.08) 0%, rgba(255, 183, 3, 0.02) 100%);
+    border: 1px solid var(--rv-border-amber);
+}
+
+.category-card {
+    background: var(--rv-bg-card-alt);
+    border: 1px solid var(--rv-border);
+    transition: background 0.2s ease;
+}
+
+.category-card:hover {
+    background: rgba(30, 42, 68, 0.8);
+}
+
+.perf-metric-box {
+    background: var(--rv-bg-card-alt);
+    border: 1px solid var(--rv-border);
+}
+
+.bg-amber-subtle {
+    background-color: rgba(255, 183, 3, 0.15) !important;
 }
 
 /* ---------------------------------------------------------------------------
    Footer
    --------------------------------------------------------------------------- */
-.footer-roadvision {
-    background-color: var(--rv-bg-card);
-    border-top: 1px solid var(--rv-border);
-    margin-top: auto;
+.footer-glass {
+    background: rgba(8, 12, 20, 0.9);
 }
 
 /* ---------------------------------------------------------------------------
-   Status Badge (Navbar)
+   Custom Scrollbars
    --------------------------------------------------------------------------- */
-#status-badge {
-    font-size: 0.75rem;
-    letter-spacing: 0.08em;
-}
-
-/* ---------------------------------------------------------------------------
-   Scrollbar (Webkit)
-   --------------------------------------------------------------------------- */
-::-webkit-scrollbar       { width: 6px; }
+::-webkit-scrollbar       { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--rv-bg-dark); }
-::-webkit-scrollbar-thumb { background: var(--rv-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--rv-amber); }
