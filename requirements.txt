@@ -1,0 +1,27 @@
+# RoadVision — Python Dependencies
+# =============================================================================
+# Application / inference dependencies only.
+# Training dependencies are listed in training/requirements_training.txt
+# =============================================================================
+
+# Core computer vision
+opencv-python>=4.8.0
+numpy>=1.24.0
+Pillow>=10.0.0
+
+# YOLO inference (Ultralytics framework)
+# NOTE: This package is listed here for the inference pipeline.
+# DO NOT run 'ultralytics' training locally — use Google Colab for training.
+ultralytics>=8.0.0
+
+# Configuration loading
+PyYAML>=6.0
+
+# Utilities
+tqdm>=4.65.0
+
+# Dashboard (optional: uncomment if using Streamlit-based dashboard)
+# streamlit>=1.28.0
+
+# Logging / debugging
+colorlog>=6.7.0

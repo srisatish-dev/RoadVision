@@ -1,0 +1,70 @@
+# =============================================================================
+# RoadVision — .gitignore
+# =============================================================================
+
+# ----- Python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.pyo
+*.pyd
+.Python
+pip-wheel-metadata/
+share/python-wheels/
+
+# ----- Virtual environments --------------------------------------------------
+venv/
+env/
+.env/
+.venv/
+ENV/
+
+# ----- Model weights (large binary files — track via LFS or store separately)
+models/*.pt
+models/*.onnx
+models/*.engine
+models/*.pth
+models/*.weights
+# Keep the models/README.md
+!models/README.md
+
+# ----- Datasets (large — do not commit raw data) ----------------------------
+data/raw/
+data/annotated/
+data/splits/
+# Keep placeholder README files
+!data/**/README.md
+!data/**/.gitkeep
+
+# ----- Sample footage (large video files) ------------------------------------
+data/sample_footage/
+!data/sample_footage/.gitkeep
+
+# ----- Logs ------------------------------------------------------------------
+logs/
+*.log
+
+# ----- OS and editor ---------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ----- Jupyter / Colab (local execution artifacts) ---------------------------
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ----- Miscellaneous outputs -------------------------------------------------
+runs/           # Ultralytics training run outputs
+output/
+results/

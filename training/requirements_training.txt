@@ -1,0 +1,19 @@
+# Training Dependencies (Google Colab)
+# ======================================
+# Install these inside Google Colab before running training.
+# These are separate from the application's requirements.txt.
+
+# YOLO training framework
+ultralytics>=8.0.0
+
+# Dataset utilities
+roboflow          # optional: for dataset download from Roboflow
+albumentations    # data augmentation
+
+# Visualization / evaluation
+matplotlib>=3.7.0
+seaborn>=0.12.0
+pandas>=2.0.0
+
+# Colab-specific
+# (torch, torchvision are pre-installed in Colab; no need to list here)

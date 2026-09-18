@@ -1,0 +1,257 @@
+# =============================================================================
+# RoadVision — Configuration File
+# VisionX Hackathon
+# =============================================================================
+# All tuneable parameters are centralized here so that no magic numbers
+# appear in the source code.  Change values here; they propagate everywhere.
+# =============================================================================
+
+
+# ---------------------------------------------------------------------------
+# MODEL
+# ---------------------------------------------------------------------------
+model:
+  # Path to the trained YOLO model weights (relative to project root).
+  # Populate this after exporting the trained model from Colab.
+  weights_path: "models/roadvision_best.pt"
+
+  # Confidence threshold: detections below this score are discarded.
+  confidence_threshold: 0.40
+
+  # IoU threshold for Non-Maximum Suppression (NMS).
+  nms_iou_threshold: 0.50
+
+  # Device for inference: "cpu" or "cuda" (if GPU is available locally).
+  device: "cpu"
+
+
+# ---------------------------------------------------------------------------
+# VIDEO INPUT
+# ---------------------------------------------------------------------------
+video:
+  # Default input video path (override via CLI --video flag).
+  default_input: "data/sample_footage/sample.mp4"
+
+  # Process every Nth frame to trade accuracy for speed.
+  # 1 = every frame, 2 = every other frame, etc.
+  frame_skip: 1
+
+  # Maximum frame width for processing (resize if larger).
+  # Set to null to disable resizing.
+  max_width: 1280
+
+
+# ---------------------------------------------------------------------------
+# OBJECT CLASSES
+# ---------------------------------------------------------------------------
+# Maps YOLO class names to RoadVision internal category groups.
+# Add or rename classes here when custom-trained classes are finalized.
+classes:
+  vehicles:
+    - car
+    - bus
+    - truck
+    - motorcycle
+    - bicycle
+    - auto-rickshaw
+
+  road_users:
+    - person
+
+  infrastructure:
+    - traffic light
+    - stop sign
+    - road barrier
+
+  road_hazards:
+    - pothole
+    - construction debris
+
+  # All classes in a flat list (used for model class-filter).
+  all:
+    - car
+    - bus
+    - truck
+    - motorcycle
+    - bicycle
+    - auto-rickshaw
+    - person
+    - traffic light
+    - stop sign
+    - road barrier
+    - pothole
+    - construction debris
+
+
+# ---------------------------------------------------------------------------
+# ROAD ZONE ANALYSIS
+# ---------------------------------------------------------------------------
+# The frame is divided into a 3×2 grid:
+#   Horizontal: LEFT | CENTER | RIGHT  (based on x-position of bbox centroid)
+#   Vertical:   FAR  | NEAR            (based on y-position of bbox centroid)
+#
+# Thresholds are expressed as fractions of frame width/height (0.0 – 1.0).
+zones:
+  horizontal:
+    # x < left_boundary  → LEFT
+    # left_boundary ≤ x < right_boundary → CENTER
+    # x ≥ right_boundary → RIGHT
+    left_boundary: 0.333
+    right_boundary: 0.667
+
+  vertical:
+    # y < far_boundary → FAR  (upper portion of the frame = farther away)
+    # y ≥ far_boundary → NEAR (lower portion of the frame = closer)
+    far_boundary: 0.500
+
+
+# ---------------------------------------------------------------------------
+# DANGER ZONE
+# ---------------------------------------------------------------------------
+# A predefined rectangular region of the frame considered the danger zone.
+# Objects whose bounding boxes overlap this region trigger a caution alert.
+# All values are fractions of frame width/height (0.0 – 1.0).
+#
+# Default: centre-bottom quarter of the frame.
+#
+#   ┌──────────────────────────────┐
+#   │           FAR ZONE           │
+#   │                              │
+#   │    ┌──────────────────┐      │
+#   │    │   DANGER ZONE    │      │
+#   │    └──────────────────┘      │
+#   └──────────────────────────────┘
+danger_zone:
+  x_min: 0.25   # left edge
+  x_max: 0.75   # right edge
+  y_min: 0.50   # top edge  (lower y_min = taller danger zone)
+  y_max: 1.00   # bottom edge
+
+  # Minimum IoU/overlap fraction required to trigger a danger alert.
+  # 0 = any overlap triggers, 1 = fully inside required.
+  overlap_threshold: 0.10
+
+
+# ---------------------------------------------------------------------------
+# OBJECT TRACKING
+# ---------------------------------------------------------------------------
+tracking:
+  # Maximum pixel distance between centroids across frames to consider
+  # the same object (used by the centroid / IoU tracker).
+  max_centroid_distance: 80   # pixels
+
+  # Maximum number of consecutive frames an object can go missing
+  # before its track ID is retired.
+  max_frames_missing: 10
+
+  # Minimum IoU between predicted and detected boxes to associate tracks.
+  iou_association_threshold: 0.30
+
+
+# ---------------------------------------------------------------------------
+# MOVING / STATIONARY CLASSIFICATION
+# ---------------------------------------------------------------------------
+motion:
+  # Minimum Euclidean centroid displacement (in pixels) between consecutive
+  # frames for an object to be classified as "Moving".
+  # Objects moving less than this threshold are classified as "Stationary".
+  movement_threshold_px: 8
+
+  # Number of consecutive frames to average displacement over,
+  # to smooth out jitter.
+  smoothing_frames: 3
+
+
+# ---------------------------------------------------------------------------
+# SCENE DENSITY
+# ---------------------------------------------------------------------------
+# Thresholds for classifying road-scene density based on total detected
+# object count in the current frame.
+density:
+  # 0 – low_threshold objects  → LOW
+  # low_threshold – high_threshold objects → MEDIUM
+  # > high_threshold objects   → HIGH
+  low_threshold: 5
+  high_threshold: 10
+
+  # Alternative: use scene occupancy ratio (total bbox area / frame area).
+  # Set use_occupancy to true to switch to this method.
+  use_occupancy: false
+  occupancy_low: 0.05    # 5% of frame area occupied  → LOW
+  occupancy_medium: 0.15 # 15% of frame area occupied → MEDIUM
+  # > occupancy_medium → HIGH
+
+
+# ---------------------------------------------------------------------------
+# CONTEXTUAL ALERTS
+# ---------------------------------------------------------------------------
+alerts:
+  # Enable/disable specific alert categories.
+  enable_danger_zone_alerts: true
+  enable_hazard_alerts: true
+  enable_signal_risk_alerts: true
+
+  # Classes considered "relevant" for danger-zone alerts.
+  danger_zone_relevant_classes:
+    - car
+    - bus
+    - truck
+    - motorcycle
+    - bicycle
+    - auto-rickshaw
+    - person
+
+  # Classes that trigger a road-hazard alert when detected.
+  hazard_classes:
+    - pothole
+    - construction debris
+    - road barrier
+
+  # Wording constants (do not use definitive language).
+  alert_wording:
+    danger_zone: "CAUTION: Object inside danger zone"
+    road_hazard: "Potential road obstruction detected"
+    signal_risk: "Potential signal-risk condition"
+
+
+# ---------------------------------------------------------------------------
+# DASHBOARD
+# ---------------------------------------------------------------------------
+dashboard:
+  # Window title.
+  window_title: "RoadVision — Road Scene Intelligence"
+
+  # Sidebar width in pixels (appended to the right of the video frame).
+  sidebar_width: 320
+
+  # Font scale for OpenCV overlay text.
+  font_scale: 0.55
+
+  # Bounding box line thickness.
+  bbox_thickness: 2
+
+  # Show confidence score on bounding box label.
+  show_confidence: true
+
+  # Show object zone on bounding box label.
+  show_zone: true
+
+  # Show tracking ID on bounding box label.
+  show_track_id: true
+
+  # Color map per category (BGR format for OpenCV).
+  colors:
+    vehicles:       [0, 200, 255]   # amber
+    road_users:     [0, 255, 100]   # green
+    infrastructure: [255, 180, 0]   # blue-ish
+    road_hazards:   [0, 0, 255]     # red
+    default:        [200, 200, 200] # grey
+
+
+# ---------------------------------------------------------------------------
+# LOGGING
+# ---------------------------------------------------------------------------
+logging:
+  level: "INFO"   # DEBUG | INFO | WARNING | ERROR
+  log_to_file: false
+  log_file: "logs/roadvision.log"

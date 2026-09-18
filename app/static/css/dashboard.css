@@ -1,0 +1,161 @@
+/* =============================================================================
+   RoadVision — Dashboard Stylesheet
+   VisionX Hackathon
+   =============================================================================
+   NOTE: This is a STUB stylesheet.
+   Full styling implementation begins in Phase 2 (Web Application Phase).
+   ============================================================================= */
+
+/* ---------------------------------------------------------------------------
+   CSS Variables — Color Palette
+   --------------------------------------------------------------------------- */
+:root {
+    --rv-bg-dark:       #0d1117;
+    --rv-bg-card:       #161b22;
+    --rv-bg-card-alt:   #1c2230;
+    --rv-border:        #30363d;
+    --rv-accent:        #f0a500;       /* amber — primary accent */
+    --rv-green:         #3fb950;
+    --rv-red:           #f85149;
+    --rv-yellow:        #d29922;
+    --rv-blue:          #388bfd;
+    --rv-text:          #c9d1d9;
+    --rv-text-muted:    #8b949e;
+    --rv-navbar-height: 56px;
+}
+
+/* ---------------------------------------------------------------------------
+   Global / Reset
+   --------------------------------------------------------------------------- */
+body {
+    background-color: var(--rv-bg-dark);
+    color: var(--rv-text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ---------------------------------------------------------------------------
+   Navbar
+   --------------------------------------------------------------------------- */
+.navbar-roadvision {
+    background-color: var(--rv-bg-card);
+    border-bottom: 1px solid var(--rv-border);
+    height: var(--rv-navbar-height);
+}
+
+.navbar-roadvision .navbar-brand {
+    color: var(--rv-accent);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+
+/* ---------------------------------------------------------------------------
+   Cards
+   --------------------------------------------------------------------------- */
+.card-dark {
+    background-color: var(--rv-bg-card);
+    border: 1px solid var(--rv-border);
+    border-radius: 8px;
+}
+
+.sidebar-header {
+    background-color: var(--rv-bg-card-alt);
+    border-bottom: 1px solid var(--rv-border);
+    color: var(--rv-text);
+    font-size: 0.80rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.5rem 0.75rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Video Feed
+   --------------------------------------------------------------------------- */
+.video-card {
+    min-height: 400px;
+}
+
+.video-feed {
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+    object-fit: contain;
+    background-color: #000;
+}
+
+/* ---------------------------------------------------------------------------
+   Density Badge
+   --------------------------------------------------------------------------- */
+.density-badge {
+    font-size: 1.1rem;
+    padding: 0.5em 1.2em;
+}
+
+.density-LOW    { background-color: var(--rv-green);  color: #000; }
+.density-MEDIUM { background-color: var(--rv-yellow); color: #000; }
+.density-HIGH   { background-color: var(--rv-red);    color: #fff; }
+
+/* ---------------------------------------------------------------------------
+   Danger Zone Badge
+   --------------------------------------------------------------------------- */
+.danger-badge {
+    font-size: 1.0rem;
+    padding: 0.5em 1.2em;
+}
+
+.danger-ACTIVE { background-color: var(--rv-red);   color: #fff; animation: pulse 1s infinite; }
+.danger-CLEAR  { background-color: var(--rv-green); color: #000; }
+
+@keyframes pulse {
+    0%   { opacity: 1; }
+    50%  { opacity: 0.6; }
+    100% { opacity: 1; }
+}
+
+/* ---------------------------------------------------------------------------
+   Alerts List
+   --------------------------------------------------------------------------- */
+#alerts-list li {
+    font-size: 0.82rem;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid var(--rv-border);
+    color: var(--rv-yellow);
+}
+
+#alerts-list li:last-child { border-bottom: none; }
+
+/* ---------------------------------------------------------------------------
+   Table
+   --------------------------------------------------------------------------- */
+.table-dark {
+    --bs-table-bg: transparent;
+    color: var(--rv-text);
+    font-size: 0.85rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Footer
+   --------------------------------------------------------------------------- */
+.footer-roadvision {
+    background-color: var(--rv-bg-card);
+    border-top: 1px solid var(--rv-border);
+    margin-top: auto;
+}
+
+/* ---------------------------------------------------------------------------
+   Status Badge (Navbar)
+   --------------------------------------------------------------------------- */
+#status-badge {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+}
+
+/* ---------------------------------------------------------------------------
+   Scrollbar (Webkit)
+   --------------------------------------------------------------------------- */
+::-webkit-scrollbar       { width: 6px; }
+::-webkit-scrollbar-track { background: var(--rv-bg-dark); }
+::-webkit-scrollbar-thumb { background: var(--rv-border); border-radius: 3px; }
