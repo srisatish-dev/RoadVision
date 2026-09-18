@@ -8,6 +8,30 @@
 
 
 # ---------------------------------------------------------------------------
+# FLASK WEB SERVER
+# ---------------------------------------------------------------------------
+server:
+  host: "0.0.0.0"          # Bind address (0.0.0.0 = accessible on LAN)
+  port: 5000                # http://localhost:5000
+  debug: true               # Set to false for demo/production
+  secret_key: "roadvision-dev-secret-change-in-prod"
+
+  # File upload settings
+  upload_folder: "data/uploads"       # Uploaded videos are stored here
+  allowed_extensions:                 # Accepted video file formats
+    - mp4
+    - avi
+    - mov
+    - mkv
+  max_upload_size_mb: 500             # Maximum video file size (MB)
+
+  # How often the frontend polls for a new frame (milliseconds).
+  # Lower = smoother video, higher CPU/network usage.
+  # This is a hint for the JS frontend; actual rate depends on inference speed.
+  frontend_poll_interval_ms: 200
+
+
+# ---------------------------------------------------------------------------
 # MODEL
 # ---------------------------------------------------------------------------
 model:

@@ -42,6 +42,10 @@ data/splits/
 !data/**/README.md
 !data/**/.gitkeep
 
+# ----- Uploaded videos (runtime uploads via Flask /api/upload) --------------
+data/uploads/
+!data/uploads/.gitkeep
+
 # ----- Sample footage (large video files) ------------------------------------
 data/sample_footage/
 !data/sample_footage/.gitkeep

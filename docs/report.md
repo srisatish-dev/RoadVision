@@ -29,11 +29,16 @@
 | **Project Title** | RoadVision — Context-Aware Road Scene Intelligence using YOLO |
 | **Hackathon** | VisionX (One-Day Computer Vision Hackathon) |
 | **Project Type** | Computer Vision / Road Scene Understanding |
+| **Application Type** | Local Web Application (`http://localhost:5000`) |
 | **Core Philosophy** | *From object detection to context-aware road-scene understanding* |
 
 RoadVision is a computer vision system that processes driving footage and goes **beyond basic
 object detection**. It applies lightweight spatial, temporal, and contextual analysis on top of
 a YOLO-based detector to produce a rich understanding of road scenes in real time.
+
+The system is delivered as a **local web application** — a Flask backend serves the CV pipeline,
+and a browser-based dashboard visualises results. No internet connection or cloud APIs are required
+during the demonstration.
 
 ---
 

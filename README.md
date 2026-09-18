@@ -78,44 +78,59 @@ Live Dashboard
 
 ---
 
+## Application Type
+
+**Local Web Application** — runs entirely on your machine, accessed in the browser at `http://localhost:5000`.
+No cloud inference. No external APIs. All CV processing stays in the Python backend.
+
+```
+Browser (Dashboard UI)
+    ↓  REST API
+Flask Backend (Python)
+    ↓  Python calls
+CV Pipeline (src/)   ← YOLO + Tracking + Scene Analysis
+    ↓
+Flask → Browser Dashboard
+```
+
+---
+
 ## Project Structure
 
 ```
 RoadVision/
-├── src/                    # Application source code (inference + analysis)
-│   ├── detector.py         # YOLO detector wrapper
-│   ├── tracker.py          # Lightweight object tracker
-│   ├── categorizer.py      # Object counter and categorizer
-│   ├── zone_analyzer.py    # Road-zone (LEFT/CENTER/RIGHT × FAR/NEAR)
-│   ├── motion_classifier.py# Moving / stationary classifier
-│   ├── density_estimator.py# Scene density (LOW/MEDIUM/HIGH)
-│   ├── danger_zone.py      # Danger-zone overlap analysis
-│   ├── alert_generator.py  # Contextual alert rules
-│   ├── scene_summary.py    # Scene summary composer
-│   ├── dashboard.py        # Live dashboard renderer
+├── app/                    # Flask web application
+│   ├── routes/
+│   │   ├── main.py         # Page routes  (GET /)
+│   │   └── api.py          # REST API     (/api/*)
+│   ├── static/
+│   │   ├── css/dashboard.css
+│   │   └── js/dashboard.js
+│   └── templates/
+│       ├── base.html
+│       └── dashboard.html
+├── src/                    # Python CV pipeline modules
+│   ├── detector.py         # M2 — YOLO detector wrapper
+│   ├── tracker.py          # M3 — Object tracker
+│   ├── categorizer.py      # M4 — Counter + categorizer
+│   ├── zone_analyzer.py    # M5 — Zone analysis
+│   ├── motion_classifier.py# M6 — Moving/stationary
+│   ├── density_estimator.py# M7 — Scene density
+│   ├── danger_zone.py      # M8 — Danger-zone analysis
+│   ├── alert_generator.py  # M9 — Contextual alerts
+│   ├── scene_summary.py    # M10 — Scene summary
 │   └── utils.py            # Shared utilities
-├── training/               # Training scripts and Colab notebooks
-│   ├── notebooks/          # Google Colab training notebooks
-│   ├── scripts/            # Dataset prep and training utility scripts
-│   └── README.md           # Training workflow documentation
-├── data/                   # Dataset directory (not committed)
-│   ├── raw/                # Raw collected images/videos
-│   ├── annotated/          # Annotated datasets (YOLO format)
-│   └── splits/             # train / val / test splits
-├── models/                 # Trained model weights (not committed)
-│   └── README.md           # Model registry and notes
-├── config/
-│   └── config.yaml         # All configurable thresholds and parameters
-├── docs/                   # Project documentation
-│   ├── architecture.md     # System architecture notes
-│   ├── dataset_guide.md    # Dataset sourcing and annotation guide
-│   ├── training_guide.md   # Colab training workflow guide
-│   └── feature_spec.md     # Detailed feature specifications
-├── tests/                  # Unit and integration tests
-├── pipeline.py             # Main application entry point
+├── training/               # Google Colab training workflow
+│   ├── notebooks/          # Colab training notebooks
+│   └── scripts/            # Dataset preparation scripts
+├── data/                   # Datasets + uploaded videos (git-ignored)
+├── models/                 # Trained YOLO weights (git-ignored)
+├── config/config.yaml      # All configurable parameters
+├── docs/                   # Documentation
+├── tests/                  # Unit + integration tests
+├── run.py                  # Flask application entry point
 ├── requirements.txt        # Python dependencies
-├── .gitignore              # Git ignore rules
-└── README.md               # This file
+└── README.md
 ```
 
 ---
@@ -128,8 +143,9 @@ RoadVision/
 | YOLO training | `training/notebooks/` | **Google Colab** |
 | Model evaluation | `training/notebooks/` | **Google Colab** |
 | Trained weights | `models/` | Exported from Colab |
-| Inference pipeline | `src/` | **Local machine** |
-| Dashboard | `src/dashboard.py` | **Local machine** |
+| CV pipeline | `src/` | **Local machine** |
+| Flask backend | `app/` | **Local machine** |
+| Web dashboard | `app/templates/` + `app/static/` | **Browser** |
 
 ---
 
@@ -142,9 +158,15 @@ pip install -r requirements.txt
 # 2. Place trained model in models/
 #    e.g., models/roadvision_best.pt
 
-# 3. Run on a video
-python pipeline.py --video path/to/driving_footage.mp4
+# 3. Start the web server
+python run.py
+
+# 4. Open in browser
+#    http://localhost:5000
+
+# 5. Upload driving video → click ▶ Start
 ```
+
 
 ---
 
