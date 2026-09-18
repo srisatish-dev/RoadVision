@@ -38,8 +38,8 @@ def main():
             debug = server_cfg.get("debug", debug)
 
     print("\n" + "=" * 60)
-    print(" 🚗 Starting RoadVision Web Application")
-    print(f" Access URL: http://localhost:{port}")
+    print(" [*] Starting RoadVision Web Application")
+    print(f" [*] Access URL: http://localhost:{port}")
     print("=" * 60 + "\n")
 
     app.run(host=host, port=port, debug=debug)

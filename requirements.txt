@@ -1,41 +1,34 @@
 # RoadVision — Python Dependencies
 # =============================================================================
-# Application / inference dependencies only.
-# Training dependencies are listed in training/requirements_training.txt
+# Production and Inference Dependencies for Local & Cloud Hosting
 # =============================================================================
 
 # ---------------------------------------------------------------------------
-# Web Application — Flask Backend
+# Web Application & Production Server
 # ---------------------------------------------------------------------------
 Flask>=3.0.0
-Flask-CORS>=4.0.0          # Cross-Origin Resource Sharing (dev convenience)
+Flask-CORS>=4.0.0
+gunicorn>=21.2.0
+Werkzeug>=3.0.0
 
 # ---------------------------------------------------------------------------
-# Core Computer Vision
+# Core Computer Vision & Image Processing
 # ---------------------------------------------------------------------------
 opencv-python>=4.8.0
 numpy>=1.24.0
 Pillow>=10.0.0
 
 # ---------------------------------------------------------------------------
-# YOLO Inference (Ultralytics framework)
-# NOTE: Listed here for the local inference pipeline only.
-# DO NOT run 'ultralytics' training locally — use Google Colab for training.
+# YOLO Inference & PyTorch
 # ---------------------------------------------------------------------------
 ultralytics>=8.0.0
+torch>=2.0.0
+torchvision>=0.15.0
 
 # ---------------------------------------------------------------------------
-# Configuration Loading
+# Configuration & Utilities
 # ---------------------------------------------------------------------------
 PyYAML>=6.0
-
-# ---------------------------------------------------------------------------
-# Utilities
-# ---------------------------------------------------------------------------
 tqdm>=4.65.0
-
-# ---------------------------------------------------------------------------
-# Logging / Debugging
-# ---------------------------------------------------------------------------
 colorlog>=6.7.0
 

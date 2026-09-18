@@ -10,12 +10,12 @@ let objectChart = null;
 let uploadedFilename = null;
 let webcamPollTimer = null;
 
-// Category mappings matching config
+// Category mappings matching config and extended live detection classes
 const CATEGORIES = {
-    vehicles: ['car', 'bus', 'truck', 'motorcycle', 'bicycle', 'auto-rickshaw'],
-    road_users: ['person'],
-    infrastructure: ['traffic light', 'stop sign', 'road barrier'],
-    road_hazards: ['pothole', 'construction debris']
+    vehicles: ['car', 'bus', 'truck', 'motorcycle', 'bicycle', 'auto-rickshaw', 'train', 'boat', 'airplane'],
+    road_users: ['person', 'pedestrian', 'rider', 'dog', 'cat', 'horse', 'bird'],
+    infrastructure: ['traffic light', 'stop sign', 'road barrier', 'bench', 'parking meter', 'fire hydrant', 'chair', 'couch', 'tv', 'laptop'],
+    road_hazards: ['pothole', 'construction debris', 'backpack', 'suitcase', 'handbag', 'umbrella', 'bottle', 'cup', 'cell phone']
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -177,42 +177,146 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // -----------------------------------------------------------------------
-    // LIVE WEBCAM PROCESSING
     // -----------------------------------------------------------------------
+    // LIVE WEBCAM PROCESSING (Universal Cloud & Local Support)
+    // -----------------------------------------------------------------------
+    let browserMediaStream = null;
+    let clientInferLoopActive = false;
+    let hiddenVideoElem = null;
+    let clientCanvas = null;
+
     elBtnWebcamStart.addEventListener('click', async () => {
+        const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+        elBtnWebcamStart.disabled = true;
+        elBtnWebcamStop.disabled = false;
+        elVideoPlaceholder.classList.add('d-none');
+        elVideoPlaceholder.classList.remove('d-flex');
+        elVideoStream.classList.remove('d-none');
+        if (elOverlayBadges) elOverlayBadges.classList.remove('d-none');
+
+        elProcessStatus.textContent = 'Status: Initializing Live Camera...';
+        setSystemStatus('LIVE CAMERA STARTING', 'amber');
+
+        // On cloud servers (non-localhost), or if server camera is unavailable, use browser camera stream
+        if (!isLocalHost && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            const started = await startBrowserCameraInference();
+            if (started) return;
+        }
+
+        // Fallback or local mode: use direct MJPEG stream
         try {
             const res = await fetch('/api/webcam/start', { method: 'POST' });
             const data = await res.json();
 
             if (res.ok && data.status === 'success') {
                 elVideoStream.src = '/api/webcam/stream?t=' + Date.now();
-                elVideoStream.classList.remove('d-none');
-                elVideoPlaceholder.classList.add('d-none');
-                elVideoPlaceholder.classList.remove('d-flex');
-                if (elOverlayBadges) elOverlayBadges.classList.remove('d-none');
-
-                elBtnWebcamStart.disabled = true;
-                elBtnWebcamStop.disabled = false;
-
                 elProcessStatus.textContent = 'Status: Live Camera Active';
                 setSystemStatus('LIVE CAMERA ACTIVE', 'red');
-
                 startWebcamStatsPolling();
             } else {
-                const errMsg = data.error || data.message || 'Could not start webcam';
-                alert('Webcam error: ' + errMsg);
+                // Try browser camera as fallback
+                const started = await startBrowserCameraInference();
+                if (!started) {
+                    const errMsg = data.error || data.message || 'Could not access camera';
+                    alert('Camera error: ' + errMsg);
+                    stopWebcamStream();
+                }
             }
         } catch (err) {
-            console.error('Webcam start error:', err);
-            alert('Failed to connect to webcam feed on backend.');
+            console.warn('Server webcam stream error, attempting browser camera:', err);
+            const started = await startBrowserCameraInference();
+            if (!started) {
+                alert('Failed to connect to camera feed.');
+                stopWebcamStream();
+            }
         }
     });
+
+    async function startBrowserCameraInference() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            return false;
+        }
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+                audio: false
+            });
+            browserMediaStream = stream;
+
+            if (!hiddenVideoElem) {
+                hiddenVideoElem = document.createElement('video');
+                hiddenVideoElem.setAttribute('playsinline', '');
+                hiddenVideoElem.muted = true;
+            }
+            hiddenVideoElem.srcObject = stream;
+            await hiddenVideoElem.play();
+
+            clientCanvas = document.createElement('canvas');
+            clientCanvas.width = 640;
+            clientCanvas.height = 480;
+            const ctx = clientCanvas.getContext('2d');
+
+            clientInferLoopActive = true;
+            let isFirstFrame = true;
+            let isSending = false;
+
+            elProcessStatus.textContent = 'Status: Browser Live Camera Active';
+            setSystemStatus('LIVE CAMERA ACTIVE', 'red');
+
+            async function framePump() {
+                if (!clientInferLoopActive) return;
+                if (!isSending && hiddenVideoElem.readyState >= 2) {
+                    isSending = true;
+                    ctx.drawImage(hiddenVideoElem, 0, 0, 640, 480);
+                    const b64 = clientCanvas.toDataURL('image/jpeg', 0.75);
+
+                    fetch('/api/webcam/infer_frame', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image: b64, reset: isFirstFrame })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        isSending = false;
+                        isFirstFrame = false;
+                        if (clientInferLoopActive && data.status === 'success') {
+                            if (data.image) elVideoStream.src = data.image;
+                            if (data.summary) updateStatsUI(data.summary);
+                        }
+                    })
+                    .catch(err => {
+                        isSending = false;
+                        console.debug('Frame send error:', err);
+                    });
+                }
+                if (clientInferLoopActive) {
+                    setTimeout(framePump, 50); // ~20 FPS inference loop
+                }
+            }
+
+            framePump();
+            return true;
+        } catch (e) {
+            console.warn('Browser webcam capture failed:', e);
+            return false;
+        }
+    }
 
     elBtnWebcamStop.addEventListener('click', () => {
         stopWebcamStream();
     });
 
     function stopWebcamStream() {
+        clientInferLoopActive = false;
+        if (browserMediaStream) {
+            browserMediaStream.getTracks().forEach(t => t.stop());
+            browserMediaStream = null;
+        }
+        if (hiddenVideoElem) {
+            hiddenVideoElem.srcObject = null;
+        }
+
         fetch('/api/webcam/stop', { method: 'POST' }).catch(() => {});
         if (webcamPollTimer) {
             clearInterval(webcamPollTimer);
@@ -281,6 +385,7 @@ function updateStatsUI(summary) {
         else if (CATEGORIES.road_users.includes(clsLower)) roadUserCount += count;
         else if (CATEGORIES.infrastructure.includes(clsLower)) infraCount += count;
         else if (CATEGORIES.road_hazards.includes(clsLower)) hazardCount += count;
+        else roadUserCount += count; // Default other detected items to scene/road users
     }
 
     const totalUnique = summary.total_unique_objects ?? (vehicleCount + roadUserCount + infraCount + hazardCount);

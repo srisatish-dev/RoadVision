@@ -7,9 +7,11 @@ live webcam stream, and scene summary status.
 
 import os
 import time
+import base64
 import logging
 from typing import Dict, Any
 import cv2
+import numpy as np
 from flask import Blueprint, request, jsonify, current_app, send_from_directory, Response
 from werkzeug.utils import secure_filename
 
@@ -273,6 +275,84 @@ def webcam_stream():
         ),
         mimetype='multipart/x-mixed-replace; boundary=frame'
     )
+
+
+_client_processor: VideoProcessor = None
+_client_frames_count: int = 0
+_client_start_time: float = 0.0
+
+
+@api_bp.route("/api/webcam/infer_frame", methods=["POST"])
+def infer_webcam_frame():
+    """
+    Process a single webcam frame sent from the client browser.
+    Ensures live camera works seamlessly when deployed on cloud servers (Render, Hugging Face, etc.).
+    """
+    global _client_processor, _client_frames_count, _client_start_time, _live_webcam_summary
+
+    data = request.get_json(silent=True) or {}
+    image_b64 = data.get("image")
+    if not image_b64:
+        return jsonify({"status": "error", "error": "No image payload provided"}), 400
+
+    try:
+        # Reset tracking session if requested
+        if data.get("reset"):
+            detector = get_detector()
+            _client_processor = VideoProcessor(detector=detector)
+            _client_processor.tracker.reset()
+            _client_frames_count = 0
+            _client_start_time = time.time()
+
+        # Decode base64 image
+        if "," in image_b64:
+            image_b64 = image_b64.split(",", 1)[1]
+        img_bytes = base64.b64decode(image_b64)
+        np_arr = np.frombuffer(img_bytes, np.uint8)
+        frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+
+        if frame is None:
+            return jsonify({"status": "error", "error": "Invalid image data"}), 400
+
+        detector = get_detector()
+        if _client_processor is None:
+            _client_processor = VideoProcessor(detector=detector)
+            _client_processor.tracker.reset()
+            _client_frames_count = 0
+            _client_start_time = time.time()
+
+        # Run detection & tracking
+        detections = detector.predict(frame, confidence_threshold=0.20)
+        tracked_objects = _client_processor.tracker.update(detections)
+        annotated_frame = _client_processor.render_tracked_objects(frame, tracked_objects)
+
+        _client_frames_count += 1
+        elapsed = time.time() - _client_start_time
+        fps = _client_frames_count / elapsed if elapsed > 0 else 0.0
+
+        ret_encode, buffer = cv2.imencode('.jpg', annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 75])
+        annotated_b64 = "data:image/jpeg;base64," + base64.b64encode(buffer.tobytes()).decode('utf-8')
+
+        summary = {
+            "status": "live",
+            "frames_processed": _client_frames_count,
+            "total_unique_objects": _client_processor.tracker.get_total_unique_objects(),
+            "total_raw_detections": len(detections),
+            "class_counts": _client_processor.tracker.get_unique_counts(),
+            "currently_visible": len(tracked_objects),
+            "elapsed_seconds": round(elapsed, 1),
+            "average_fps": round(fps, 1)
+        }
+        _live_webcam_summary = summary
+
+        return jsonify({
+            "status": "success",
+            "image": annotated_b64,
+            "summary": summary
+        })
+    except Exception as e:
+        logger.error(f"Error in infer_webcam_frame: {e}", exc_info=True)
+        return jsonify({"status": "error", "error": str(e)}), 500
 
 
 @api_bp.route("/api/webcam/summary", methods=["GET"])
